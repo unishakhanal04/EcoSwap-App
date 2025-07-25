@@ -1,4 +1,4 @@
-package com.example.plantcarelite.ui.theme
+package com.example.plantcare.view.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

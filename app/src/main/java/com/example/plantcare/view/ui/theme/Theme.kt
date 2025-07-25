@@ -1,4 +1,4 @@
-package com.example.plantcarelite.ui.theme
+package com.example.plantcare.view.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -34,7 +34,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun PlantCareLiteTheme(
+fun PlantcareTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

@@ -1,4 +1,4 @@
-package com.example.plantcarelite.ui.theme
+package com.example.plantcare.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

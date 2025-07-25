@@ -1,4 +1,4 @@
-package com.example.plantcarelite
+package com.example.plantcare
 
 import org.junit.Test
 
