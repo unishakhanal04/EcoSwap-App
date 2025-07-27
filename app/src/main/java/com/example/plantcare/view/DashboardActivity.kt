@@ -10,21 +10,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -34,47 +22,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -87,7 +43,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// Add ActionId enum
+// ActionId enum
 enum class ActionId {
     WATER_PLANTS,
     ADD_NEW_PLANT,
@@ -100,32 +56,43 @@ class DashboardActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Get data from intent
+        // Get user details from intent
         val username = intent.getStringExtra("username") ?: "User"
-        val password = intent.getStringExtra("password") ?: ""
+        val email = intent.getStringExtra("email") ?: "user@plantcare.com"
+        val memberSince = intent.getStringExtra("member_since") ?: "January 2024"
+        val userLevel = intent.getStringExtra("user_level") ?: "Expert Gardener"
 
         setContent {
-            DashboardBody(username = username)
+            DashboardBody(
+                username = username,
+                email = email,
+                memberSince = memberSince,
+                userLevel = userLevel
+            )
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardBody(username: String = "User") {
+fun DashboardBody(
+    username: String = "User",
+    email: String = "user@plantcare.com",
+    memberSince: String = "January 2024",
+    userLevel: String = "Expert Gardener"
+) {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf(0) }
-
-    // Create a mutable state list for recent activities
     val recentActivities = remember {
-        mutableStateListOf<RecentActivity>().apply {
-            addAll(getRecentActivities())
-        }
+        mutableStateListOf<RecentActivity>().apply { addAll(getRecentActivities()) }
     }
-
-    // Create repository and viewmodel for delete operations
     val repo = remember { ProductRepositoryImpl() }
     val viewModel = remember { ProductViewModel(repo) }
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    // Calculate dynamic stats
+    val totalPlants = recentActivities.count { it.isPlant }
+    val careStreak = 28 // This could be calculated from actual care data
 
     // Register launcher for AddProductActivity
     val addPlantLauncher = rememberLauncherForActivityResult(
@@ -139,18 +106,10 @@ fun DashboardBody(username: String = "User") {
                 val plantPrice = data.getStringExtra("plant_price") ?: ""
                 val plantImageUrl = data.getStringExtra("plant_image_url") ?: ""
                 val plantId = data.getStringExtra("plant_id") ?: System.currentTimeMillis().toString()
-
-                // Create current timestamp
                 val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
-
-                // Check if this is an edit operation
                 val isEdit = data.getBooleanExtra("is_edit", false)
-
                 if (isEdit) {
-                    // Find and update existing plant in the list
-                    val index = recentActivities.indexOfFirst {
-                        it.plantId == plantId && it.isPlant
-                    }
+                    val index = recentActivities.indexOfFirst { it.plantId == plantId && it.isPlant }
                     if (index != -1) {
                         recentActivities[index] = recentActivities[index].copy(
                             title = "Plant Updated",
@@ -160,7 +119,6 @@ fun DashboardBody(username: String = "User") {
                     }
                     Toast.makeText(context, "$plantName updated successfully!", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Add new plant to the beginning of the list
                     recentActivities.add(
                         0,
                         RecentActivity(
@@ -196,11 +154,7 @@ fun DashboardBody(username: String = "User") {
                 val plantDescription = data.getStringExtra("plant_description") ?: ""
                 val plantPrice = data.getStringExtra("plant_price") ?: ""
                 val plantImageUrl = data.getStringExtra("plant_image_url") ?: ""
-
-                // Find and update the plant in recent activities
-                val index = recentActivities.indexOfFirst {
-                    it.plantId == plantId && it.isPlant
-                }
+                val index = recentActivities.indexOfFirst { it.plantId == plantId && it.isPlant }
                 if (index != -1) {
                     recentActivities[index] = recentActivities[index].copy(
                         title = "Plant Updated",
@@ -246,6 +200,14 @@ fun DashboardBody(username: String = "User") {
                             tint = Color.White
                         )
                     }
+                    // ENHANCED PROFILE ICON BUTTON
+                    IconButton(onClick = { showProfileDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = Color.White
+                        )
+                    }
                     IconButton(onClick = {
                         val intent = Intent(context, LoginActivity::class.java)
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -273,7 +235,6 @@ fun DashboardBody(username: String = "User") {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Stats Cards Section
             item {
                 Text(
                     text = "Your Plant Journey",
@@ -284,21 +245,17 @@ fun DashboardBody(username: String = "User") {
             }
 
             item {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(getStatsData()) { stat ->
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(getStatsData(totalPlants, careStreak)) { stat ->
                         StatsCard(stat = stat)
                     }
                 }
             }
 
-            // Weekly Progress Section
             item {
                 WeeklyProgressCard()
             }
 
-            // Quick Actions Section
             item {
                 Text(
                     text = "Plant Care Actions",
@@ -323,7 +280,6 @@ fun DashboardBody(username: String = "User") {
                                     addPlantLauncher.launch(intent)
                                 }
                                 ActionId.WATER_PLANTS -> {
-                                    // Add new watering activity
                                     recentActivities.add(
                                         0,
                                         RecentActivity(
@@ -346,7 +302,6 @@ fun DashboardBody(username: String = "User") {
                 }
             }
 
-            // Recent Activity Section
             item {
                 Text(
                     text = "Recent Plant Care & Additions",
@@ -360,7 +315,6 @@ fun DashboardBody(username: String = "User") {
                 RecentActivityCard(
                     activity = activity,
                     onEdit = { plantActivity ->
-                        // Navigate to UpdateProductActivity
                         val intent = Intent(context, UpdateProductActivity::class.java).apply {
                             putExtra("plant_id", plantActivity.plantId)
                             putExtra("plant_name", plantActivity.plantName)
@@ -372,7 +326,6 @@ fun DashboardBody(username: String = "User") {
                         updatePlantLauncher.launch(intent)
                     },
                     onDelete = { plantActivity ->
-                        // Delete from database and remove from list
                         if (plantActivity.plantId.isNotEmpty()) {
                             viewModel.deleteProduct(plantActivity.plantId) { success, message ->
                                 if (success) {
@@ -391,6 +344,222 @@ fun DashboardBody(username: String = "User") {
             }
         }
     }
+
+    // --- ENHANCED PROFILE DIALOG ---
+    if (showProfileDialog) {
+        AlertDialog(
+            onDismissRequest = { showProfileDialog = false },
+            title = {
+                Text(
+                    "Profile Details",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2E7D32)
+                )
+            },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    // Profile Avatar
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(
+                                Color(0xFF4CAF50).copy(alpha = 0.1f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "User Avatar",
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // User Details Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFF8F9FA)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Username
+                            ProfileDetailRow(
+                                icon = Icons.Default.Person,
+                                label = "Username",
+                                value = username
+                            )
+
+                            // Email
+                            ProfileDetailRow(
+                                icon = Icons.Default.Email,
+                                label = "Email",
+                                value = email
+                            )
+
+                            // Member Since
+                            ProfileDetailRow(
+                                icon = Icons.Default.DateRange,
+                                label = "Member Since",
+                                value = memberSince
+                            )
+
+                            // Total Plants
+                            ProfileDetailRow(
+                                icon = Icons.Default.Place,
+                                label = "Total Plants",
+                                value = "$totalPlants plants"
+                            )
+
+                            // Care Streak
+                            ProfileDetailRow(
+                                icon = Icons.Default.Star,
+                                label = "Care Streak",
+                                value = "$careStreak days"
+                            )
+
+                            // Plant Parent Level
+                            ProfileDetailRow(
+                                icon = Icons.Default.Star,
+                                label = "Plant Parent Level",
+                                value = userLevel
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Quick Settings
+                    Text(
+                        text = "Quick Settings",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF2E7D32)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Notification Toggle
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            IconButton(
+                                onClick = {
+                                    Toast.makeText(context, "Notifications toggled", Toast.LENGTH_SHORT).show()
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = "Notifications",
+                                    tint = Color(0xFF4CAF50)
+                                )
+                            }
+                            Text("Reminders", fontSize = 10.sp)
+                        }
+
+                        // Settings
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            IconButton(
+                                onClick = {
+                                    Toast.makeText(context, "Settings opened", Toast.LENGTH_SHORT).show()
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = "Settings",
+                                    tint = Color(0xFF4CAF50)
+                                )
+                            }
+                            Text("Settings", fontSize = 10.sp)
+                        }
+
+                        // Help
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            IconButton(
+                                onClick = {
+                                    Toast.makeText(context, "Help & Support", Toast.LENGTH_SHORT).show()
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = "Help",
+                                    tint = Color(0xFF4CAF50)
+                                )
+                            }
+                            Text("Help", fontSize = 10.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(
+                        onClick = {
+                            showProfileDialog = false
+                            Toast.makeText(context, "Edit profile feature coming soon!", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Text("Edit Profile", color = Color(0xFF4CAF50))
+                    }
+                    TextButton(
+                        onClick = { showProfileDialog = false }
+                    ) {
+                        Text("Close")
+                    }
+                }
+            }
+        )
+    }
+}
+
+// ProfileDetailRow Composable
+@Composable
+fun ProfileDetailRow(
+    icon: ImageVector,
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = Color(0xFF4CAF50),
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                color = Color.Gray,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = value,
+                fontSize = 14.sp,
+                color = Color.Black,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
 }
 
 @Composable
@@ -399,9 +568,7 @@ fun StatsCard(stat: StatData) {
         modifier = Modifier
             .width(120.dp)
             .height(100.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -431,14 +598,10 @@ fun StatsCard(stat: StatData) {
 fun WeeklyProgressCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -456,9 +619,7 @@ fun WeeklyProgressCard() {
                     fontWeight = FontWeight.Medium
                 )
             }
-
             Spacer(modifier = Modifier.height(8.dp))
-
             LinearProgressIndicator(
                 progress = 0.92f,
                 modifier = Modifier
@@ -468,9 +629,7 @@ fun WeeklyProgressCard() {
                 color = Color(0xFF4CAF50),
                 trackColor = Color(0xFFE8F5E8)
             )
-
             Spacer(modifier = Modifier.height(8.dp))
-
             Text(
                 text = "23 out of 25 care tasks completed this week",
                 fontSize = 12.sp,
@@ -487,9 +646,7 @@ fun QuickActionCard(action: QuickAction, onClick: () -> Unit) {
             .fillMaxWidth()
             .height(120.dp)
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = action.backgroundColor
-        ),
+        colors = CardDefaults.cardColors(containerColor = action.backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -525,12 +682,9 @@ fun RecentActivityCard(
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -542,10 +696,7 @@ fun RecentActivityCard(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(
-                        activity.iconColor.copy(alpha = 0.1f),
-                        CircleShape
-                    ),
+                    .background(activity.iconColor.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -555,31 +706,12 @@ fun RecentActivityCard(
                     modifier = Modifier.size(20.dp)
                 )
             }
-
             Spacer(modifier = Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = activity.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = activity.description,
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = activity.title, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text(text = activity.description, fontSize = 12.sp, color = Color.Gray)
             }
-
-            Text(
-                text = activity.time,
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-
-            // Show menu only for plant activities
+            Text(text = activity.time, fontSize = 12.sp, color = Color.Gray)
             if (activity.isPlant) {
                 Box {
                     IconButton(onClick = { expanded = true }) {
@@ -589,7 +721,6 @@ fun RecentActivityCard(
                             tint = Color.Gray
                         )
                     }
-
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
@@ -635,8 +766,6 @@ fun RecentActivityCard(
             }
         }
     }
-
-    // Delete confirmation dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -663,7 +792,8 @@ fun RecentActivityCard(
     }
 }
 
-// Updated Data Classes
+// Data classes and helpers
+
 data class StatData(
     val value: String,
     val label: String,
@@ -692,11 +822,10 @@ data class RecentActivity(
     val plantImageUrl: String = ""
 )
 
-// Data Functions
-fun getStatsData(): List<StatData> = listOf(
-    StatData("12", "Plants Cared", Color(0xFF4CAF50)),
-    StatData("28", "Days Streak", Color(0xFF2196F3)),
-    StatData("10", "Healthy Plants", Color(0xFF8BC34A)),
+fun getStatsData(totalPlants: Int, careStreak: Int): List<StatData> = listOf(
+    StatData("$totalPlants", "Plants Cared", Color(0xFF4CAF50)),
+    StatData("$careStreak", "Days Streak", Color(0xFF2196F3)),
+    StatData("${(totalPlants * 0.9).toInt()}", "Healthy Plants", Color(0xFF8BC34A)),
     StatData("4.8", "Care Rating", Color(0xFFFF9800))
 )
 
