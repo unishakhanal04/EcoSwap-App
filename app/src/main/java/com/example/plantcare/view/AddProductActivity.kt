@@ -151,8 +151,8 @@ fun AddProductScreen() {
             OutlinedTextField(
                 value = plantType,
                 onValueChange = { plantType = it },
-                label = { Text("Plant Type/Category") },
-                placeholder = { Text("e.g., Indoor Plant, Succulent, Flowering") },
+                label = { Text("Plant Type") },
+                placeholder = { Text("e.g., Indoor Plant") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color(0xFF4CAF50),
@@ -165,7 +165,7 @@ fun AddProductScreen() {
                 value = price,
                 onValueChange = { price = it },
                 label = { Text("Price") },
-                placeholder = { Text("e.g., 25.99") },
+                placeholder = { Text("e.g., 250") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color(0xFF4CAF50),
@@ -178,7 +178,7 @@ fun AddProductScreen() {
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Care Instructions & Description") },
-                placeholder = { Text("Describe care requirements, lighting needs, watering schedule...") },
+                placeholder = { Text("Describe care requirements") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 4,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -218,7 +218,7 @@ fun AddProductScreen() {
                             }
 
                             // Show loading state
-                            Toast.makeText(context, "Adding plant...", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Adding plant..", Toast.LENGTH_SHORT).show()
 
                             viewModel.uploadImage(context, imageUri) { imageUrl ->
                                 if (imageUrl != null) {

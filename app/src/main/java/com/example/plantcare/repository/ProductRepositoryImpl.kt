@@ -2,8 +2,6 @@ package com.example.plantcare.repository
 
 
 import com.example.plantcare.model.ProductModel
-
-
 import android.content.Context
 import android.net.Uri
 import android.os.Handler
@@ -21,9 +19,11 @@ import java.util.concurrent.Executors
 
 class ProductRepositoryImpl : ProductRepository {
 
+    var ref = FirebaseDatabase.getInstance().reference.child("products")  // use var here
+
 
     val database = FirebaseDatabase.getInstance()
-    val ref = database.reference.child("products")
+//    val ref = database.reference.child("products")
 
     private val cloudinary = Cloudinary(
         mapOf(
